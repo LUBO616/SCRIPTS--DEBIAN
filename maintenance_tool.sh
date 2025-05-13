@@ -1,21 +1,7 @@
 #!/bin/bash
 
-# Check if the script is running as root
-if [ "$(id -u)" -ne 0 ]; then
-    echo "❌ Error: This script must be run as root (use sudo)."
-    exit 1
-fi
-
-echo "Select an option:"
-echo "1. System Summary"
-echo "2. Preventive Maintenance"
-echo "3. Exit"
-
-# Read user input
-read -p "Enter your choice: " option
-
-if [ "$option" -eq 1 ]; then
-    echo "Showing system summary..."
+system_summary() {
+    echo "SHOWING SYSTEM SUMMARY..."
     echo "======================================="
 
     # Display system information
@@ -36,37 +22,69 @@ if [ "$option" -eq 1 ]; then
         fi
     done < /etc/passwd
 
-    echo "Analysis completed"
-
-elif [ "$option" -eq 2 ]; then
     echo "======================================"
-    echo "Initializing maintenance..."
-    echo "upgrade packages and remove obsolete dependencies..."
-    apt full-upgrade;
-    echo "-Done-"
-    echo"Updates the Xaplan index..."
-    update-apt-xapian-index;
-    echo "-Done-"
-    echo "Resolves dependencies..."
-    aptitude safe-upgrade;
-    echo "-Done-"
-    echo "Checks for broken or missing dependencies..."
-    apt install -f;
-    echo "-Done-"
-    echo "Completes interrupted installations..."
-    sudo dpkg --configure -a;
-    echo "-Done-"
-    sudo apt --fix-broken install
-    echo "Successful"
-    echo "Press any key to exit..."
-    read -n 1
-    echo "Bye"
-    exit 0
+    echo "SHOWING DISK PARTITIONS... "
+    
+    # Check if hwinfo is installed
+    if ! dpkg -l | grep -q "hwinfo"; then
+        echo "INSTALLING HWINFO..."
+        apt install -y hwinfo
+        echo "Done"
+    else
+        echo "HWINFO DETECTED"
+    fi
 
-elif [ "$option" -eq 3 ]; then
-    echo "Exiting..."
-    exit 0
-else
-    echo "Invalid option. Please try again."
-fi
+    lsblk
 
+    # Ask user if they want more disk information
+    while true; do
+        read -p "Do you want more disk information [Y/N]? " option
+
+        if [[ "$option" =~ ^[Yy]$ ]]; then
+            echo "SHOWING MORE INFORMATION..."
+            hwinfo --disk
+            echo "Done..."
+            break
+        elif [[ "$option" =~ ^[Nn]$ ]]; then
+            break
+        else
+            echo "❌ Invalid input. Please enter Y or N."
+        fi
+    done
+
+    echo "===================================="
+    echo "ANALYSIS COMPLETED"
+    main_menu
+}
+preventive_maintenance(){
+echo "without service"
+main_menu
+}
+
+main_menu(){
+	# Check if the script is running as root
+	if [ "$(id -u)" -ne 0 ]; then
+	    echo "❌ Error: This script must be run as root (use sudo)."
+	    exit 1
+	fi
+	while true; do
+		echo "=============================="
+    echo "       MAIN MENU"
+    echo "=============================="
+		echo "1. System Summary"
+		echo "2. Preventive Maintenance"
+		echo "3. Exit"
+
+		# Read user input
+		read -p "Enter your choice: " option
+		
+		case "$option" in
+			1) system_summary;;
+			2) precentive_maintenance;;
+			3) echo "Exiting..."; exit 0;;
+			*) echo "❌ Invalid option. Please enter 1, 2 or 3." main_menu;;
+		esac
+	done
+}
+
+main_menu
